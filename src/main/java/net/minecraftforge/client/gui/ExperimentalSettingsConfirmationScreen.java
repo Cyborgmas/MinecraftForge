@@ -7,11 +7,12 @@ import net.minecraft.client.gui.screen.ConfirmScreen;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.client.gui.widget.button.CheckboxButton;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 
-//Forge internal.
+@Deprecated //Forge internal.
 public class ExperimentalSettingsConfirmationScreen extends ConfirmScreen
 {
     private CheckboxButton checkbox;
@@ -40,7 +41,7 @@ public class ExperimentalSettingsConfirmationScreen extends ConfirmScreen
         }));
 
         checkBoxText = IBidiRenderer.func_243258_a(this.field_230712_o_, new TranslationTextComponent("forge.confirmgui.checkbox"), this.field_230708_k_ - 50);
-        this.checkbox = new CheckboxButton(this.field_230708_k_ / 2 - 10, this.field_230709_l_ / 6 + 156, 150, 20, ITextComponent.func_244388_a(null), false, false);
+        this.checkbox = new CheckboxButton(this.field_230708_k_ / 2 - 10, this.field_230709_l_ / 6 + 156, 150, 20, StringTextComponent.field_240750_d_,false, false);
         this.func_230480_a_(checkbox);
     }
 
@@ -48,6 +49,6 @@ public class ExperimentalSettingsConfirmationScreen extends ConfirmScreen
     public void func_230430_a_(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_)
     {
         super.func_230430_a_(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
-        this.checkBoxText.func_241863_a(p_230430_1_, this.field_230708_k_ / 2, 185);
+        this.checkBoxText.func_241863_a(p_230430_1_, this.field_230708_k_ / 2, this.field_230709_l_ / 6 + 131);
     }
 }

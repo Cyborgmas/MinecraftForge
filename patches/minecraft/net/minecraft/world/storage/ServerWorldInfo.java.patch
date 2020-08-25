@@ -9,11 +9,10 @@
        this.field_237343_c_ = p_i242043_30_;
        this.field_237344_d_ = p_i242043_31_;
     }
-@@ -188,7 +188,7 @@
-       if (this.field_237337_A_ != null) {
+@@ -189,6 +189,7 @@
           p_237370_2_.func_186854_a("WanderingTraderId", this.field_237337_A_);
        }
--
+ 
 +      p_237370_2_.func_74778_a("lifecycle", this.field_237342_b_.getLifecycle());
     }
  

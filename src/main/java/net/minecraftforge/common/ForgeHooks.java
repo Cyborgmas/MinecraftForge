@@ -41,7 +41,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
 import com.mojang.serialization.Lifecycle;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.block.Block;
