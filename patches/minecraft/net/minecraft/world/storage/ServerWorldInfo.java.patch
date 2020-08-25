@@ -1,0 +1,20 @@
+--- a/net/minecraft/world/storage/ServerWorldInfo.java
++++ b/net/minecraft/world/storage/ServerWorldInfo.java
+@@ -103,7 +103,7 @@
+       this.field_237340_D_ = p_i242043_26_;
+       this.field_237364_x_ = p_i242043_27_;
+       this.field_237363_w_ = p_i242043_28_;
+-      this.field_237342_b_ = p_i242043_29_;
++      this.field_237342_b_ = p_i242043_29_.withLifecycle(net.minecraftforge.common.ForgeHooks.encodeLifecycle(p_i242043_31_));
+       this.field_237343_c_ = p_i242043_30_;
+       this.field_237344_d_ = p_i242043_31_;
+    }
+@@ -188,7 +188,7 @@
+       if (this.field_237337_A_ != null) {
+          p_237370_2_.func_186854_a("WanderingTraderId", this.field_237337_A_);
+       }
+-
++      p_237370_2_.func_74778_a("lifecycle", this.field_237342_b_.getLifecycle());
+    }
+ 
+    public int func_76079_c() {

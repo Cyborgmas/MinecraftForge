@@ -279,6 +279,15 @@
     }
  
     private void func_184117_aA() {
+@@ -1637,7 +1678,7 @@
+       IServerConfiguration iserverconfiguration = minecraft$packmanager.func_238226_c_();
+       boolean flag = iserverconfiguration.func_230418_z_().func_236229_j_();
+       boolean flag1 = iserverconfiguration.func_230401_A_() != Lifecycle.stable();
+-      if (p_238195_6_ == Minecraft.WorldSelectionType.NONE || !flag && !flag1) {
++      if (field_71474_y.confirmExperimentalSettingsPermanently || p_238195_6_ == Minecraft.WorldSelectionType.NONE || !flag && !flag1) {
+          this.func_213254_o();
+          this.field_213277_ad.set((TrackingChunkStatusListener)null);
+ 
 @@ -1697,7 +1738,12 @@
           networkmanager.func_150719_a(new ClientLoginNetHandler(networkmanager, this, (Screen)null, (p_229998_0_) -> {
           }));
@@ -293,6 +302,15 @@
           this.field_71453_ak = networkmanager;
        } else {
           this.func_241559_a_(p_238195_6_, p_238195_1_, flag, () -> {
+@@ -1734,7 +1780,7 @@
+             p_241559_4_.run();
+          }, itextcomponent, itextcomponent1, false));
+       } else {
+-         this.func_147108_a(new ConfirmScreen((p_241560_3_) -> {
++         this.func_147108_a(new net.minecraftforge.client.gui.ExperimentalSettingsConfirmationScreen((p_241560_3_) -> {
+             if (p_241560_3_) {
+                p_241559_4_.run();
+             } else {
 @@ -1771,6 +1817,7 @@
     }
  
