@@ -50,6 +50,12 @@ import net.minecraft.world.gen.placement.Placement;
 import net.minecraft.world.gen.surfacebuilders.ConfiguredSurfaceBuilders;
 import net.minecraft.world.gen.surfacebuilders.SurfaceBuilder;
 import net.minecraftforge.common.data.worldgen.*;
+import net.minecraftforge.common.world.biomes.conditions.BiomeCategoryMatchesCondition;
+import net.minecraftforge.common.world.biomes.conditions.BiomeMatchesCondition;
+import net.minecraftforge.common.world.biomes.conditions.BiomeOrCondition;
+import net.minecraftforge.common.world.biomes.conditions.base.IBiomeCondition;
+import net.minecraftforge.common.world.biomes.modifiers.SimpleFeaturesAdditions;
+import net.minecraftforge.common.world.biomes.modifiers.base.BiomeModifier;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.GatherDataEvent;
@@ -74,8 +80,29 @@ public class WorldDataGenTest
         generator.addProvider(new Jigsaws(event));
         generator.addProvider(new Noise(event));
         generator.addProvider(new BiomeGen(event));
+        generator.addProvider(new BiomeMods(event));
         generator.addProvider(new DimType(event));
         generator.addProvider(new Dim(event));
+    }
+
+    static class BiomeMods extends BiomeModificationProvider
+    {
+        protected BiomeMods(GatherDataEvent event)
+        {
+            super(event.getGenerator(), event.getRegistryOpsHelper(), MODID);
+        }
+
+        @Override
+        protected void start()
+        {
+            IBiomeCondition cond = new BiomeOrCondition(ImmutableList.of(
+                    new BiomeCategoryMatchesCondition(ImmutableList.of(Biome.Category.PLAINS, Biome.Category.SAVANNA)),
+                    new BiomeMatchesCondition(new ResourceLocation("minecraft:giant_tree_taiga"))
+            ));
+            BiomeModifier mod = new SimpleFeaturesAdditions(cond, ImmutableList.of(),
+                    ImmutableList.of(()-> Structure.field_236367_c_.func_236391_a_(new MineshaftConfig(0.1780f, MineshaftStructure.Type.MESA))));
+            this.put(new ResourceLocation(MODID, "another_one"), mod);
+        }
     }
 
     static class Structs extends ConfiguredStructureFeatureProvider

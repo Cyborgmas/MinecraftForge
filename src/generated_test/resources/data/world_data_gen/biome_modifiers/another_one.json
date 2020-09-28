@@ -1,0 +1,28 @@
+{
+  "condition": {
+    "conditions": [
+      {
+        "categories": [
+          "plains",
+          "savanna"
+        ],
+        "type": "forge:matches_category"
+      },
+      {
+        "biome": "minecraft:giant_tree_taiga",
+        "type": "forge:matches_biome"
+      }
+    ],
+    "type": "forge:or_combined"
+  },
+  "starts": [
+    {
+      "config": {
+        "probability": 0.178,
+        "type": "mesa"
+      },
+      "type": "minecraft:mineshaft"
+    }
+  ],
+  "type": "forge:features_additions"
+}
