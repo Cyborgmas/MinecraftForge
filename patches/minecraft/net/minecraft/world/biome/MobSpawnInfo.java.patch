@@ -7,7 +7,7 @@
 +   private final java.util.Set<EntityClassification> typesView;
 +   private final java.util.Set<EntityType<?>> costView;
  
-    private MobSpawnInfo(float p_i241946_1_, Map<EntityClassification, List<MobSpawnInfo.Spawners>> p_i241946_2_, Map<EntityType<?>, MobSpawnInfo.SpawnCosts> p_i241946_3_, boolean p_i241946_4_) {
+    public MobSpawnInfo(float p_i241946_1_, Map<EntityClassification, List<MobSpawnInfo.Spawners>> p_i241946_2_, Map<EntityType<?>, MobSpawnInfo.SpawnCosts> p_i241946_3_, boolean p_i241946_4_) {
        this.field_242553_d = p_i241946_1_;
        this.field_242554_e = p_i241946_2_;
        this.field_242555_f = p_i241946_3_;
