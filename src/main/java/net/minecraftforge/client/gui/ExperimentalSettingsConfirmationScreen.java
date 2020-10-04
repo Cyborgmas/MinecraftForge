@@ -12,6 +12,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 
+@SuppressWarnings("DeprecatedIsStillUsed")
 @Deprecated //Forge internal.
 public class ExperimentalSettingsConfirmationScreen extends ConfirmScreen
 {
