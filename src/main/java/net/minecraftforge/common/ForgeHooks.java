@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -40,6 +41,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.*;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import javax.annotation.Nonnull;
@@ -56,6 +59,8 @@ import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.loot.LootContext;
 import net.minecraft.loot.LootTable;
 import net.minecraft.loot.LootTableManager;
+import net.minecraft.nbt.INBT;
+import net.minecraft.nbt.NBTDynamicOps;
 import net.minecraft.tags.ITag;
 import net.minecraft.util.*;
 import net.minecraft.block.BlockState;
@@ -96,7 +101,9 @@ import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionUtils;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.util.registry.SimpleRegistry;
 import net.minecraft.util.text.*;
+import net.minecraft.world.*;
 import net.minecraft.world.chunk.IChunk;
 import net.minecraft.world.gen.feature.structure.Structure;
 import net.minecraft.world.spawner.AbstractSpawner;
@@ -110,12 +117,6 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.EntityRayTraceResult;
 import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.world.Difficulty;
-import net.minecraft.world.GameType;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.IWorldReader;
-import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.BiomeAmbience;
 import net.minecraft.world.biome.BiomeGenerationSettings;
@@ -1282,5 +1283,113 @@ public class ForgeHooks
             chunk.setModified(true);
         }
         chunk.setStructureReferences(structureReferences);
+    }
+
+    private static final String ALL_DIMS_KEY = "all_dimensions_forge";
+    private static final String CODEC_DIM_KEY = "dimensions"; // key for the dim reg in DimensionGeneratorSettings
+
+    /**
+     * Codec that tries to decode the registry of all dimensions.
+     */
+    public static MapCodec<SimpleRegistry<Dimension>> tryAllDimensionsCodec(Codec<SimpleRegistry<Dimension>> base)
+    {
+        return new MapCodec<SimpleRegistry<Dimension>>()
+        {
+            @Override
+            public <T> DataResult<SimpleRegistry<Dimension>> decode(DynamicOps<T> ops, MapLike<T> input)
+            {
+                return base.parse(ops, input.get(ALL_DIMS_KEY) != null ? input.get(ALL_DIMS_KEY) : input.get(CODEC_DIM_KEY));
+            }
+
+            @Override
+            public <T> RecordBuilder<T> encode(SimpleRegistry<Dimension> input, DynamicOps<T> ops, RecordBuilder<T> prefix)
+            {
+                return prefix.add(CODEC_DIM_KEY, base.encodeStart(ops, input));
+            }
+
+            @Override
+            public <T> Stream<T> keys(DynamicOps<T> ops)
+            {
+                return Stream.of(ops.createString(ALL_DIMS_KEY), ops.createString(CODEC_DIM_KEY));
+            }
+        };
+    }
+
+    public static MapCodec<CompoundNBT> allDimensionsCodec()
+    {
+        return new MapCodec<CompoundNBT>()
+        {
+            @Override
+            public <T> DataResult<CompoundNBT> decode(DynamicOps<T> ops, MapLike<T> input)
+            {
+                T allDims = input.get(ALL_DIMS_KEY);
+                if (allDims != null)
+                {
+                    INBT allNbt = allDims instanceof INBT ? (INBT) allDims : ops.convertTo(NBTDynamicOps.INSTANCE, allDims);
+                    if (allNbt instanceof CompoundNBT)
+                        return DataResult.success((CompoundNBT)allNbt);
+                }
+                else // will happen when "porting" worlds to this version.
+                {
+                    T curr = input.get(CODEC_DIM_KEY);
+                    if (curr == null)
+                        return DataResult.error("Could not find \"dimensions\" object while decoding world gen settings, impossible!", new CompoundNBT());
+
+                    INBT nbt = curr instanceof INBT ? (INBT) curr : ops.convertTo(NBTDynamicOps.INSTANCE, curr);
+                    if (nbt instanceof CompoundNBT)
+                        return DataResult.success((CompoundNBT) nbt);
+                }
+                return DataResult.error("All dimensions tag is not a compound.", new CompoundNBT());
+            }
+
+            /**
+             * When encoding, merge the loaded dimensions with the ones in the "all" tag,
+             * This is to prevent not knowing about a dimension that is added in a datapack after
+             * world creation.
+             *
+             * This works because the encoding of the dimension registry is done before and is available in the
+             * prefix.
+             */
+            @Override
+            public <T> RecordBuilder<T> encode(CompoundNBT input, DynamicOps<T> ops, RecordBuilder<T> prefix)
+            {
+                CompoundNBT nbt = prefix.build(ops.empty()).flatMap(ops::getMap).flatMap(map ->
+                {
+                    //Building the map is the only way to access its contents, but it nukes itself so refill it.
+                    map.entries().forEach(p -> ops.getStringValue(p.getFirst()).result().map(s -> prefix.add(s, p.getSecond())));
+
+                    T currDims = map.get(CODEC_DIM_KEY);
+
+                    if (currDims == null)
+                        return DataResult.error("Could not find \"dimensions\" object while decoding world gen settings, impossible!", new CompoundNBT());
+
+                    INBT currNbt = currDims instanceof INBT ? (INBT) currDims : ops.convertTo(NBTDynamicOps.INSTANCE, currDims);
+                    if (!(currNbt instanceof CompoundNBT))
+                        return DataResult.error("Could not find \"dimensions\" object while decoding world gen settings, impossible!", new CompoundNBT());
+
+                    CompoundNBT currMap = (CompoundNBT) currNbt;
+
+                    if (input.keySet().isEmpty()) // Empty on world load.
+                        return DataResult.success(currMap);
+
+                    if (input.keySet().containsAll(currMap.keySet()))
+                        return DataResult.success(input);
+                    for (String dim : currMap.keySet())
+                    {
+                        if (!input.keySet().contains(dim))
+                            input.put(dim, currMap.get(dim));
+                    }
+                    return DataResult.success(input);
+                }).resultOrPartial(LOGGER::warn).orElse(new CompoundNBT());
+
+                return prefix.add(ALL_DIMS_KEY, ops instanceof NBTDynamicOps ? (T) nbt : NBTDynamicOps.INSTANCE.convertTo(ops, nbt));
+            }
+
+            @Override
+            public <T> Stream<T> keys(DynamicOps<T> ops)
+            {
+                return Stream.of(ops.createString(ALL_DIMS_KEY));
+            }
+        };
     }
 }
