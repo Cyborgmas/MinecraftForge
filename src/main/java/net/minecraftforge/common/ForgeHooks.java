@@ -1330,10 +1330,6 @@ public class ForgeHooks
         throw new IllegalArgumentException("Unknown lifecycle.");
     }
 
-    public static String addLifecycles(String lifecycle1, String lifecycle2)
-    {
-        return encodeLifecycle(parseLifecycle(lifecycle1).add(parseLifecycle(lifecycle2)));
-    }
     /**
      * Fixes MC-194811
      * When a structure mod is removed, this map may contain null keys. This will make the world unable to save if this persists.

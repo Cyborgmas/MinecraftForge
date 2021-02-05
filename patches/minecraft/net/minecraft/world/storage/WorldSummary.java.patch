@@ -6,6 +6,6 @@
     }
 +
 +   public boolean isExperimental() {
-+      return field_237307_a_.getLifecycle().equals("experimental");
++      return field_237307_a_.getLifecycle().equals(com.mojang.serialization.Lifecycle.experimental());
 +   }
  }

@@ -31,7 +31,6 @@
           printwriter.println("autoJump:" + AbstractOption.field_216719_z.func_216741_b(this));
 @@ -661,7 +667,7 @@
           printwriter.println("syncChunkWrites:" + this.field_241568_aS_);
-+         printwriter.println("forge_confirmExperimentalSettingsPermanently:" + this.confirmExperimentalSettingsPermanently);
  
           for(KeyBinding keybinding : this.field_74324_K) {
 -            printwriter.println("key_" + keybinding.func_151464_g() + ":" + keybinding.func_197982_m());
