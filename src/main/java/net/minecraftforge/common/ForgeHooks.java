@@ -1422,81 +1422,78 @@ public class ForgeHooks
         };
     }
 
-    public static MapCodec<CompoundNBT> allDimensionsCodec()
+    public static final MapCodec<CompoundNBT> ALL_DIMENSIONS_CODEC = new MapCodec<CompoundNBT>()
     {
-        return new MapCodec<CompoundNBT>()
+        @Override
+        public <T> DataResult<CompoundNBT> decode(DynamicOps<T> ops, MapLike<T> input)
         {
-            @Override
-            public <T> DataResult<CompoundNBT> decode(DynamicOps<T> ops, MapLike<T> input)
+            T allDims = input.get(ALL_DIMS_KEY);
+            if (allDims != null)
             {
-                T allDims = input.get(ALL_DIMS_KEY);
-                if (allDims != null)
-                {
-                    INBT allNbt = allDims instanceof INBT ? (INBT) allDims : ops.convertTo(NBTDynamicOps.INSTANCE, allDims);
-                    if (allNbt instanceof CompoundNBT)
-                        return DataResult.success((CompoundNBT)allNbt);
-                }
-                else // will happen when "porting" worlds to this version.
-                {
-                    T curr = input.get(CODEC_DIM_KEY);
-                    if (curr == null)
-                        return DataResult.error("Could not find \"dimensions\" object while decoding world gen settings, impossible!", new CompoundNBT());
-
-                    INBT nbt = curr instanceof INBT ? (INBT) curr : ops.convertTo(NBTDynamicOps.INSTANCE, curr);
-                    if (nbt instanceof CompoundNBT)
-                        return DataResult.success((CompoundNBT) nbt);
-                }
-                return DataResult.error("All dimensions tag is not a compound.", new CompoundNBT());
+                INBT allNbt = allDims instanceof INBT ? (INBT) allDims : ops.convertTo(NBTDynamicOps.INSTANCE, allDims);
+                if (allNbt instanceof CompoundNBT)
+                    return DataResult.success((CompoundNBT)allNbt);
             }
-
-            /**
-             * When encoding, merge the loaded dimensions with the ones in the "all" tag,
-             * This is to prevent not knowing about a dimension that is added in a datapack after
-             * world creation.
-             *
-             * This works because the encoding of the dimension registry is done before and is available in the
-             * prefix.
-             */
-            @Override
-            public <T> RecordBuilder<T> encode(CompoundNBT input, DynamicOps<T> ops, RecordBuilder<T> prefix)
+            else // will happen when "porting" worlds to this version.
             {
-                CompoundNBT nbt = prefix.build(ops.empty()).flatMap(ops::getMap).flatMap(map ->
-                {
-                    //Building the map is the only way to access its contents, but it nukes itself so refill it.
-                    map.entries().forEach(p -> ops.getStringValue(p.getFirst()).result().map(s -> prefix.add(s, p.getSecond())));
+                T curr = input.get(CODEC_DIM_KEY);
+                if (curr == null)
+                    return DataResult.error("Could not find \"dimensions\" object while decoding world gen settings, impossible!", new CompoundNBT());
 
-                    T currDims = map.get(CODEC_DIM_KEY);
+                INBT nbt = curr instanceof INBT ? (INBT) curr : ops.convertTo(NBTDynamicOps.INSTANCE, curr);
+                if (nbt instanceof CompoundNBT)
+                    return DataResult.success((CompoundNBT) nbt);
+            }
+            return DataResult.error("All dimensions tag is not a compound.", new CompoundNBT());
+        }
 
-                    if (currDims == null)
-                        return DataResult.error("Could not find \"dimensions\" object while decoding world gen settings, impossible!", new CompoundNBT());
+        /**
+         * When encoding, merge the loaded dimensions with the ones in the "all" tag,
+         * This is to prevent not knowing about a dimension that is added in a datapack after
+         * world creation.
+         *
+         * This works because the encoding of the dimension registry is done before and is available in the
+         * prefix.
+         */
+        @Override
+        public <T> RecordBuilder<T> encode(CompoundNBT input, DynamicOps<T> ops, RecordBuilder<T> prefix)
+        {
+            CompoundNBT nbt = prefix.build(ops.empty()).flatMap(ops::getMap).flatMap(map ->
+            {
+                //Building the map is the only way to access its contents, but it nukes itself so refill it.
+                map.entries().forEach(p -> prefix.add(p.getFirst(), p.getSecond()));
 
-                    INBT currNbt = currDims instanceof INBT ? (INBT) currDims : ops.convertTo(NBTDynamicOps.INSTANCE, currDims);
-                    if (!(currNbt instanceof CompoundNBT))
-                        return DataResult.error("Could not find \"dimensions\" object while decoding world gen settings, impossible!", new CompoundNBT());
+                T currDims = map.get(CODEC_DIM_KEY);
 
-                    CompoundNBT currMap = (CompoundNBT) currNbt;
+                if (currDims == null)
+                    return DataResult.error("Could not find \"dimensions\" object while decoding world gen settings, impossible!", new CompoundNBT());
 
-                    if (input.keySet().isEmpty()) // Empty on world load.
-                        return DataResult.success(currMap);
+                INBT currNbt = currDims instanceof INBT ? (INBT) currDims : ops.convertTo(NBTDynamicOps.INSTANCE, currDims);
+                if (!(currNbt instanceof CompoundNBT))
+                    return DataResult.error("Could not find \"dimensions\" object while decoding world gen settings, impossible!", new CompoundNBT());
 
-                    if (input.keySet().containsAll(currMap.keySet()))
-                        return DataResult.success(input);
-                    for (String dim : currMap.keySet())
-                    {
-                        if (!input.keySet().contains(dim))
-                            input.put(dim, currMap.get(dim));
-                    }
+                CompoundNBT currMap = (CompoundNBT) currNbt;
+
+                if (input.keySet().isEmpty()) // Empty on world load.
+                    return DataResult.success(currMap);
+
+                if (input.keySet().containsAll(currMap.keySet()))
                     return DataResult.success(input);
-                }).resultOrPartial(LOGGER::warn).orElse(new CompoundNBT());
+                for (String dim : currMap.keySet())
+                {
+                    if (!input.keySet().contains(dim))
+                        input.put(dim, currMap.get(dim));
+                }
+                return DataResult.success(input.copy());
+            }).resultOrPartial(LOGGER::warn).orElse(new CompoundNBT());
 
-                return prefix.add(ALL_DIMS_KEY, ops instanceof NBTDynamicOps ? (T) nbt : NBTDynamicOps.INSTANCE.convertTo(ops, nbt));
-            }
+            return prefix.add(ALL_DIMS_KEY, ops instanceof NBTDynamicOps ? (T) nbt : NBTDynamicOps.INSTANCE.convertTo(ops, nbt));
+        }
 
-            @Override
-            public <T> Stream<T> keys(DynamicOps<T> ops)
-            {
-                return Stream.of(ops.createString(ALL_DIMS_KEY));
-            }
-        };
-    }
+        @Override
+        public <T> Stream<T> keys(DynamicOps<T> ops)
+        {
+            return Stream.of(ops.createString(ALL_DIMS_KEY));
+        }
+    };
 }
