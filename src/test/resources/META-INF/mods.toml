@@ -31,6 +31,8 @@ license="LGPL v2.1"
 [[mods]]
     modId="new_fluid_test"
 [[mods]]
+    modId="milk_fluid_test"
+[[mods]]
     modId="data_gen_test"
 [[mods]]
     modId="piston_event_test"
@@ -89,6 +91,8 @@ license="LGPL v2.1"
 [[mods]]
     modId="biome_loading_event_test"
 [[mods]]
+    modId="forge_chunk_manager_test"
+[[mods]]
     modId="living_conversion_event_test"
 [[mods]]
     modId="player_game_mode_event_test"
@@ -104,3 +108,7 @@ license="LGPL v2.1"
     modId="custom_sound_type_test"
 [[mods]]
     modId="item_modifier_test"
+[[mods]]
+    modId="shader_fix_test"
+[[mods]]
+    modId="worldgen_registry_desync_test"
