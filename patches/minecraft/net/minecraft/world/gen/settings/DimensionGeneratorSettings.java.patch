@@ -30,22 +30,17 @@
        Dimension dimension = p_i231914_5_.func_230516_a_(Dimension.field_236053_b_);
        if (dimension == null) {
           throw new IllegalStateException("Overworld settings missing");
-@@ -75,11 +79,15 @@
+@@ -75,6 +79,10 @@
     }
  
     private DimensionGeneratorSettings(long p_i231915_1_, boolean p_i231915_3_, boolean p_i231915_4_, SimpleRegistry<Dimension> p_i231915_5_, Optional<String> p_i231915_6_) {
 +      this(p_i231915_1_, p_i231915_3_, p_i231915_4_, p_i231915_5_, p_i231915_6_, new net.minecraft.nbt.CompoundNBT());
 +   }
 +   private DimensionGeneratorSettings(long p_i231915_1_, boolean p_i231915_3_, boolean p_i231915_4_, SimpleRegistry<Dimension> p_i231915_5_, Optional<String> p_i231915_6_, net.minecraft.nbt.CompoundNBT forgeAllDimensionsTag) {
++      this.forgeAllDimensionsTag = forgeAllDimensionsTag;
        this.field_236205_e_ = p_i231915_1_;
        this.field_236206_f_ = p_i231915_3_;
        this.field_236207_g_ = p_i231915_4_;
-       this.field_236208_h_ = p_i231915_5_;
-       this.field_236209_i_ = p_i231915_6_;
-+      this.forgeAllDimensionsTag = forgeAllDimensionsTag;
-    }
- 
-    public static DimensionGeneratorSettings func_242752_a(DynamicRegistries p_242752_0_) {
 @@ -168,17 +176,17 @@
     }
  

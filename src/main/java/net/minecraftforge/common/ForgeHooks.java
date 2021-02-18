@@ -46,7 +46,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.mojang.datafixers.util.Pair;
-import com.mojang.serialization.*;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.Dynamic;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.Lifecycle;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.MapLike;
+import com.mojang.serialization.RecordBuilder;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import javax.annotation.Nonnull;
@@ -1498,7 +1505,7 @@ public class ForgeHooks
                 if (nbt instanceof CompoundNBT)
                     return DataResult.success((CompoundNBT) nbt);
             }
-            return DataResult.error("All dimensions tag is not a compound.", new CompoundNBT());
+            return DataResult.error("tag: " + ALL_DIMS_KEY + " is not a compound.", new CompoundNBT());
         }
 
         /**
