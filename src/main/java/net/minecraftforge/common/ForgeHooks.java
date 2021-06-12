@@ -1418,41 +1418,6 @@ public class ForgeHooks
         return data.set(DIMENSIONS_KEY, withInjected);
     }
 
-    private static final Map<EntityType<? extends LivingEntity>, AttributeModifierMap> FORGE_ATTRIBUTES = new HashMap<>();
-    /**  FOR INTERNAL USE ONLY, DO NOT CALL DIRECTLY */
-    @Deprecated
-    public static Map<EntityType<? extends LivingEntity>, AttributeModifierMap> getAttributesView()
-    {
-        return Collections.unmodifiableMap(FORGE_ATTRIBUTES);
-    }
-
-    /**  FOR INTERNAL USE ONLY, DO NOT CALL DIRECTLY
-     * ONLY EXISTS FOR LEGACY REASONS SHOULD BE REMOVED IN 1.17
-     */
-    @Deprecated /// Internal use only, Remove in 1.17
-    public static AttributeModifierMap putAttributesOld(EntityType<? extends LivingEntity> type, AttributeModifierMap map)
-    {
-        LOGGER.warn("Called deprecated GlobalEntityTypeAttributes#put for {}, use EntityAttributeCreationEvent instead.", type.getRegistryName());
-        return FORGE_ATTRIBUTES.put(type, map);
-    }
-
-    /**  FOR INTERNAL USE ONLY, DO NOT CALL DIRECTLY */
-    @Deprecated
-    public static void modifyAttributes()
-    {
-        ModLoader.get().postEvent(new EntityAttributeCreationEvent(FORGE_ATTRIBUTES));
-        Map<EntityType<? extends LivingEntity>, AttributeModifierMap.MutableAttribute> finalMap = new HashMap<>();
-        ModLoader.get().postEvent(new EntityAttributeModificationEvent(finalMap));
-
-        finalMap.forEach((k, v) ->
-        {
-            AttributeModifierMap modifiers = GlobalEntityTypeAttributes.getSupplier(k);
-            AttributeModifierMap.MutableAttribute newMutable = modifiers != null ? new AttributeModifierMap.MutableAttribute(modifiers) : new AttributeModifierMap.MutableAttribute();
-            newMutable.combine(v);
-            FORGE_ATTRIBUTES.put(k, newMutable.build());
-        });
-    }
-
     private static final String ALL_DIMS_KEY = "all_dimensions_forge";
     private static final String CODEC_DIM_KEY = "dimensions"; // key for the dim reg in DimensionGeneratorSettings
 
@@ -1510,11 +1475,12 @@ public class ForgeHooks
 
         /**
          * When encoding, merge the loaded dimensions with the ones in the "all" tag,
-         * This is to prevent not knowing about a dimension that is added in a datapack after
-         * world creation.
+         * This is to be aware of dimensions that are added in a datapack after world creation.
          *
          * This works because the encoding of the dimension registry is done before and is available in the
-         * prefix.
+         * prefix. This might change between versions if any keys are added, as DFU processes the decoding in smaller batches,
+         * in which case a reordering of the keys might be needed. It would require a moderate patch, but will maintain
+         * vanilla compatibility.
          */
         @Override
         public <T> RecordBuilder<T> encode(CompoundNBT input, DynamicOps<T> ops, RecordBuilder<T> prefix)
@@ -1535,14 +1501,14 @@ public class ForgeHooks
 
                 CompoundNBT currMap = (CompoundNBT) currNbt;
 
-                if (input.keySet().isEmpty()) // Empty on world load.
+                if (input.getAllKeys().isEmpty()) // Empty on world load.
                     return DataResult.success(currMap);
 
-                if (input.keySet().containsAll(currMap.keySet()))
+                if (input.getAllKeys().containsAll(currMap.getAllKeys()))
                     return DataResult.success(input);
-                for (String dim : currMap.keySet())
+                for (String dim : currMap.getAllKeys())
                 {
-                    if (!input.keySet().contains(dim))
+                    if (!input.getAllKeys().contains(dim))
                         input.put(dim, currMap.get(dim));
                 }
                 return DataResult.success(input.copy());
@@ -1557,4 +1523,39 @@ public class ForgeHooks
             return Stream.of(ops.createString(ALL_DIMS_KEY));
         }
     };
+
+    private static final Map<EntityType<? extends LivingEntity>, AttributeModifierMap> FORGE_ATTRIBUTES = new HashMap<>();
+    /**  FOR INTERNAL USE ONLY, DO NOT CALL DIRECTLY */
+    @Deprecated
+    public static Map<EntityType<? extends LivingEntity>, AttributeModifierMap> getAttributesView()
+    {
+        return Collections.unmodifiableMap(FORGE_ATTRIBUTES);
+    }
+
+    /**  FOR INTERNAL USE ONLY, DO NOT CALL DIRECTLY
+     * ONLY EXISTS FOR LEGACY REASONS SHOULD BE REMOVED IN 1.17
+     */
+    @Deprecated /// Internal use only, Remove in 1.17
+    public static AttributeModifierMap putAttributesOld(EntityType<? extends LivingEntity> type, AttributeModifierMap map)
+    {
+        LOGGER.warn("Called deprecated GlobalEntityTypeAttributes#put for {}, use EntityAttributeCreationEvent instead.", type.getRegistryName());
+        return FORGE_ATTRIBUTES.put(type, map);
+    }
+
+    /**  FOR INTERNAL USE ONLY, DO NOT CALL DIRECTLY */
+    @Deprecated
+    public static void modifyAttributes()
+    {
+        ModLoader.get().postEvent(new EntityAttributeCreationEvent(FORGE_ATTRIBUTES));
+        Map<EntityType<? extends LivingEntity>, AttributeModifierMap.MutableAttribute> finalMap = new HashMap<>();
+        ModLoader.get().postEvent(new EntityAttributeModificationEvent(finalMap));
+
+        finalMap.forEach((k, v) ->
+        {
+            AttributeModifierMap modifiers = GlobalEntityTypeAttributes.getSupplier(k);
+            AttributeModifierMap.MutableAttribute newMutable = modifiers != null ? new AttributeModifierMap.MutableAttribute(modifiers) : new AttributeModifierMap.MutableAttribute();
+            newMutable.combine(v);
+            FORGE_ATTRIBUTES.put(k, newMutable.build());
+        });
+    }
 }
