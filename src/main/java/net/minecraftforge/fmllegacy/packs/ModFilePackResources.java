@@ -26,6 +26,7 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.resources.ResourceLocation;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -40,12 +41,12 @@ import java.util.stream.Collectors;
 import com.google.common.base.Joiner;
 import net.minecraftforge.forgespi.locating.IModFile;
 
-public class ModFileResourcePack extends AbstractPackResources
+public class ModFilePackResources extends AbstractPackResources
 {
     private final IModFile modFile;
     private Pack packInfo;
 
-    public ModFileResourcePack(final IModFile modFile)
+    public ModFilePackResources(final IModFile modFile)
     {
         super(new File("dummy"));
         this.modFile = modFile;
@@ -66,7 +67,7 @@ public class ModFileResourcePack extends AbstractPackResources
     {
         final Path path = modFile.findResource(name);
         if(!Files.exists(path))
-            throw new ResourcePackFileNotFoundException(modFile.getFilePath().toFile(), name);
+            throw new FileNotFoundException("Can't find resource " + name + " at " + modFile.getFilePath().toString());
         return Files.newInputStream(path, StandardOpenOption.READ);
     }
 
